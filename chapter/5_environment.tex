@@ -1,0 +1,182 @@
+\chapter{実験環境}
+
+\section{データセット収集}
+実験を行うにあたり, DNNの学習に用いるためのデータセットをシミュレーターと実環境の両方から採取した. 本来学習を行うためには大量のデータセットが必要になるが, 実環境でのデータセットの収集は労力や時間などの問題から十分な数を揃えられない問題がある. この問題に対処するために機械学習の分野ではシミュレータから大量に採取された学習データを用いて事前学習を行いDNNにタスクのための広範な知識を学習させ, 最後に実環境で採取された学習データを用いてFine Tuning\cite{Fine_Tuning_paper}と呼ばれる試験環境やタスクを想定した調整を行う.
+
+\subsection{シミュレータ環境におけるデータセット収集}\label{sec:correction_AirSim}
+事前学習のためのデータセットの収集にはMicrosoft AirSim\cite{AirSim_paper}を用いた. このシミュレータはドローンのためのシミュレータであるが, 大量のデータを容易に収集することが可能であり正しい姿勢角度も取得できるため採用した. シミュレータでは図\ref{fig:AirSim_image}のようなアメリカの郊外にある住宅街を模した環境にてドローンを飛行させて学習データを採取した.
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[keepaspectratio, scale=0.8]{./figure/5_environment/image0.png}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[keepaspectratio, scale=0.8]{./figure/5_environment/image29.png}
+  \end{minipage}
+  \caption{AirSimで採取された画像}\label{fig:AirSim_image}
+\end{figure}
+
+AirSimにおけるドローンの飛行経路を図\ref{fig:AirSim_map}に示す. 図中の赤い丸は交差点, 黒い線は飛行経路を示し, ドローンは特定の交差点に到達したら隣接する交差点を一つ前に訪れた交差点以外から選び, 選ばれた交差点へ向かって飛行する. また, ドローンにはカメラを3つ搭載しており, それぞれPitch方向の仰角0度, 5度, 10度で取り付けられている. これはドローンの飛行時にPitchがRollと比較して特定の角度に集中してしまい, 学習時と推論時の環境でTarget Shift\cite{Target_Shift_paper}を引き起こす可能性があり, これを緩和するためのものである. このような条件設定のもと, ドローンは1秒につき25hzの周期でカメラからの画像を合計して約94万7000枚採取した.
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=9cm]{./figure/5_environment/AirSim_map2.jpeg}
+  \caption{AirSimでの飛行経路}
+  \label{fig:AirSim_map}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+
+\subsection{実環境におけるデータセット収集}\label{sec:real_world_dataset_collection}
+
+\subsubsection{データ採取に用いた機器}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=6cm]{./figure/5_environment/DJI_RS3_Pro.jpeg}
+  \caption{DJI RS3 Pro}
+  \label{fig:DJI_RS3_Pro}
+  \end{center}
+  \end{minipage}
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=6cm]{./figure/5_environment/IMU_Camera_Weight.jpeg}
+  \caption{IMU, カメラ, バランスウェイト}
+  \label{fig:Equip}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=5.5cm]{./figure/5_environment/MTi-30.png}
+  \caption{Xsense社製 MTi-30}
+  \label{fig:MTi-30}
+  \end{center}
+  \end{minipage}
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=5.5cm]{./figure/5_environment/focus_wheel.jpg}
+  \caption{DJI社製フォーカスホイール}
+  \label{fig:focus_wheel}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+実環境におけるデータセット収集にはDJI社製のカメラ用のジンバルであるDJI RS3 Pro(図\ref{fig:DJI_RS3_Pro})を使用した. DJI社製の一部のジンバルは公式から配布されるソフトウェア開発キットと特殊な接続端子を利用することでジンバルを任意の角度に設定したり, ジンバルの移動速度を調整することが可能である. この仕様から, 今回の実験における実環境でのデータセットの収集に最適であると判断してこの機器を使用した.\par
+実験を行うにあたって図\ref{fig:Equip}にあるように, ジンバルの他にカメラ画像を収集するためにIntel社製のRealsense D435(\ref{fig:D435}), 角速度の情報を利用するためにXsense社製のIMUであるMTi-30(図\ref{fig:MTi-30})をセンサとして使用した. また, この他にもジンバルの動作安定性とIMUやカメラの取付のために700gほどの重量のあるバランスウェイトをジンバルに搭載した. これらのデータ採取用の機材をUSBケーブルを通してPCに接続することで, PCからジンバルを動かすためのプログラムを送信したりデータを収集することが可能になる. なお, ジンバルとPCとの接続にはDJI社製のフォーカスホイール(図\ref{fig:focus_wheel})とLAWICEL社製のCANUSB変換器(図\ref{fig:CANUSB})をデュポンコネクタを用いて図\ref{fig:haisen}のように接続する必要がある. このようにして接続を行うことで実環境でのデータセットの収集に必要な機器の準備が完了する(図\ref{fig:Gimbal_image}).
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=5.5cm]{./figure/5_environment/CANUSB.jpg}
+  \caption{LAWICEL社製 CANUSB変換器}
+  \label{fig:CANUSB}
+  \end{center}
+  \end{minipage}
+  \begin{minipage}[htpb]{0.5\hsize}
+  \begin{center}
+  \includegraphics[width=6.5cm]{./figure/5_environment/haisenzu.png}
+  \caption{CANUSBとフォーカスホイール間の配線図}
+  \label{fig:haisen}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=12cm]{./figure/5_environment/Gimbal_and_PC.jpeg}
+  \caption{実験機器}
+  \label{fig:Gimbal_image}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\subsubsection{実環境におけるデータ採取}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=7cm]{./figure/5_environment/Gimbal_ikuta2.jpeg}
+  \caption{実環境でのデータ採取経路}
+  \label{fig:Gimbal_map}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+実環境でのデータ採取に用いた経路を図\ref{fig:Gimbal_map}に示す. 実環境におけるデータセットの収集は全て明治大学生田キャンパスの中で行われた. 図\ref{fig:Gimbal_map}中の赤い線は全ての学習用データと試験用データの一部を採取するために通過した経路であり, 学習データを採取するにあたっては時間を変えたり道の端を歩くなどして1つの道を複数回通過してデータを採取した. 青線は試験用データの収集のためだけに通過した経路である. 図の下部分の青線が引かれているエリアは農学部などの校舎がある地帯で, 赤線のある理工学部の校舎の地帯と比べると圃場などの農学部特有の実験設備があるものの, 校舎の形状や雰囲気などは理工学部のある地帯と大きな差な存在せずDomain Gap\cite{Domain_Adaptation_survey}は比較的少ない. その一方で図\ref{fig:Gimbal_map}右上にあたる理工学部D館の屋内でも試験用データの収集を行なっており, こちらは学習データには一切存在しない屋内環境であり, かつORB-SLAM\cite{ORB_SLAM}のようなVSLAMがしばしば特徴量を取れずに破綻するような環境である. 赤線の経路で採取された学習用データが4942秒, 赤線と青線の経路で採取されたテスト用データを1044秒分ROS\cite{ROS_paper}のBagデータとして記録した. 学習用データのため, 25hzと100hzの異なる周期で画像とそれに対応する姿勢角を取得して学習データとして記録した. 学習用データとして使用した枚数は, 25hzで採取されたデータから約12万1600枚, 100hzで採取されたデータからは一部のbagデータのみを使用したため約26万9600枚となった. また, 精度評価用のデータとして赤線の経路から採取された481秒分の既知環境のデータと, 青線の経路で採取された563秒分の未知環境のデータを25hz, 40hz, 70hz, 100hzの周期でbagデータから試験用の画像データをサンプリングした. 精度評価に用いた各Sequenceの特徴を表\ref{tab:test_sequence}に示す.
+
+\begin{table}[htbp]
+\begin{center}
+\caption{精度評価に用いた各Sequence}
+  \begin{tabular}{l c c c}\hline
+       &  採取経路 & データ時間[s] & 実験データの特徴 \\ \hline
+    Sequence1 & 赤線 & 175 & 理工学部棟周辺で採取されたデータ\\
+    Sequence2 & 赤線 & 306 & 理工学部棟周辺で採取されたデータ\\
+    Sequence3 & 青線 & 462 & 農学部で採取された屋外環境\\
+    Sequence4 & 青線 & 101 & 学習データには一切存在しない屋内環境\\ \hline
+  \end{tabular}
+  \label{tab:test_sequence}
+\end{center}
+\end{table}
+
+\section{学習環境}
+\subsection{ハードウェア構成}
+DNNの学習に用いたハードウェアとその構成を表\ref{tab:pc_spec}に示す. 学習の際にはNVIDIA DGX1(図\ref{fig:DGX1})を使用し, 精度評価の試験を行う際には推論試験用のPCを使用した.
+
+\begin{table}[htbp]
+\begin{center}
+\caption{各種ハードウェア構成}
+  \begin{tabular}{l c c}\hline
+       &  推論試験用PC & NVIDIA DGX1 \\ \hline
+    OS & Ubuntu20.04 LTS & Ubuntu20.04 LTS\\
+    CPU & i9-10850K 3.70GHz ×10 & Xeon E5-2698 2.20GHz ×80\\
+    GPU & NVIDIA RTX2080Ti 8GB ×1 & NVIDIA Tesla V100 16GB ×8\\
+    RAM & 32GB & 528GB\\ \hline
+  \end{tabular}
+  \label{tab:pc_spec}
+\end{center}
+\end{table}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=9cm]{./figure/5_environment/DGX.jpeg}
+  \caption{NVIDIA DGX1}
+  \label{fig:DGX1}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\subsection{ソフトウェア構成}
+実験に使用したライブラリ構成とそのバージョンを表\ref{tab:software}に示す. ネットワークの学習の際にはDocker上で仮想環境を構築してその環境内で学習を行った.
+
+\begin{table}[htbp]
+\begin{center}
+\caption{実験に使用したライブラリ}
+  \begin{tabular}{l|c} \hline
+    ライブラリ名 & バージョン \\ \hline
+    ROS & Noetic\\
+    Python & 3.8\\
+    CUDA & 11.1 \\
+    cuDNN & 8.0\\
+    pytorch & 1.10.1 \\
+    torchvision & 0.11.2+cu111 \\
+    OpenCV & 3.4.15 \\
+    Docker & 20.10.21 \\ \hline
+  \end{tabular}
+  \label{tab:software}
+\end{center}
+\end{table}
+
+\section{実験条件}
+本論文では\ref{sec:Camera_DNN_Estimation}で紹介したTimeSformerベースのネットワークとSENetベースのネットワークを\ref{sec:correction_AirSim}節と\ref{sec:real_world_dataset_collection}節で述べた方法で収集した学習データでそれぞれ学習させた. また, 入力する時系列画像のフレーム数による姿勢推定精度の変動を調べるためにTimeSformerとSENetの両方のネットワークで入力画像を1フレーム, 4フレーム, 8フレームに設定してそれぞれ学習を行った.\par
+精度評価においては, 姿勢推定ネットワーク単体での姿勢推定精度の評価, 時系列画像における画像のサンプリング周期の変動に対する姿勢推定精度の変動, IMUを用いたEKFによる姿勢推定結果の統合の3つの観点から行った.

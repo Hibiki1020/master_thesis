@@ -1,0 +1,267 @@
+\chapter{提案手法}
+
+\section{カメラ画像を入力とした姿勢推定ネットワーク}\label{sec:Camera_DNN_Estimation}
+本論文において時系列画像を用いた姿勢推定ネットワークには動画解析用Transformerを用いたものと動画解析用CNNを用いたものの2つを用いた. 動画解析用Transformerについては\ref{sec:TimeSformer}節, 動画解析用CNNについては\ref{sec:SENet}節にて解説を行う.
+
+
+\subsection{動画解析用Transformerを用いた姿勢推定ネットワーク}\label{sec:TimeSformer}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=16cm]{./figure/4_proposed_method/divided_scape_time_attention.png}
+  \caption{Divided Space-Time Attention}
+  \label{fig:Divided_Space_Time_Attention}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+本論文で用いた姿勢推定用Transformerのネットワークは, 動画解析用のTransformerであるTimeSformer\cite{TimeSformer_paper}をベースに, 姿勢推定タスクのため全結合層を中心にネットワークの構造に変更を加えたものである\cite{Kawai_SI2022}. TimeSformerは画像解析のために提案されたVision Transformer\cite{ViT_paper}を動画解析タスクのために発展改良させたものであり, 図\ref{fig:Divided_Space_Time_Attention}のような構造をしたDivided Space-Time Attention機構を備えている. Divided Space-Time Attention機構は時系列方向からの特徴量抽出を行うTime Attention機構と, 画像で言うところの上下左右に相当する空間方向から特徴量抽出を行うSpace Time Attention機構から構成される. これによって各時刻におけるフレーム画像自体が持つ空間の情報と時間による各フレーム画像の変化をネットワークが処理しやすい形で情報として抽出することが可能として, 通常の姿勢推定ネットワークと比較して高度な姿勢推定を可能にする.
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=16cm]{./figure/4_proposed_method/SI2022_NetworkOverall.drawio.png}
+  \caption{動画解析用Transformerを用いた姿勢推定ネットワーク}
+  \label{fig:TimeSformer_Network_Overall}
+  \end{center}
+  \end{minipage}
+\end{figure}
+ネットワークの全体像を図\ref{fig:TimeSformer_Network_Overall}に示す. ネットワークの入力には$t$フレーム分の時系列画像$(t\times3\times224\times224)$を入力とする. ネットワークに入力された時系列画像はVision Transformerのように4×4のパッチに分割される. 分割されたパッチはToken Embeddingの処理によって位置情報と時間情報が付与され, これをDevided Space-Time Attention機構へ入力する. 姿勢推定用Transformerにおいて, Divided Space-Time Attention機構は複数個が連結される. これによってネットワークは膨大な数のパラメータとそれを起因とする極めて高い表現力を獲得し, CNNと比較して高度な姿勢推定を可能とする. Divided Space-Time Attention機構によって時系列画像から抽出された特徴量は二股に分かれた全結合層へと入力されてRollとPitchの値を推定する. この全結合層の出力層は\ref{sec3:classification_output_layer}節で述べたクラス分類型出力層\cite{Kawai_SII2022}であり, RollとPitchの推定はそれぞれ独立して行われ相互干渉は行われない. \par
+動画解析用Transformerを始め, 画像を用いたTransformerにはCNNと比較して画像の大域的な情報から特徴量抽出を行うことが知られており\cite{Transformer_and_CNN_comparison}, これに時系列情報を付与することでワンショットでの姿勢推定と比較してより高度な姿勢推定を可能とする. その一方でTransformerはCNNと比較して極めて大量の学習データを必要とする\cite{Vision_Transformer_入門}と言った問題点も存在する.
+
+\subsection{動画解析用CNNを用いた姿勢推定ネットワーク}\label{sec:SENet}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=14cm]{./figure/4_proposed_method/SE_Module.drawio.png}
+  \caption{SE Module}
+  \label{fig:SE_Module}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+CNNを用いた姿勢推定ネットワークには動画解析用のCNNである3D-ResNet\cite{3D-ResNet_paper}とSENet\cite{SENet_paper}を組み合わせたものである. 3D-ResNetはResNet\cite{ResNet_paper}を時系列方向に拡張したものであり, 動画解析のタスクに用いられてきた. SENetはResNetのような単体の機械学習用のネットワークを指すのではなく, SE Moduleと呼ばれる構造とその他のネットワークを組み合わせたものの総称である. SE Moduleの構造を図\ref{fig:SE_Module}に示す. CNNでは空間情報とチャンネル情報の2つから特徴を捉えている. SE Moduleの目的はチャネルの情報に焦点を当てて重要なチャネルとそうでないチャネルを選別して重み付けを行うことにある. SE Moduleに入力される$(C \times H \times W)$の形状のテンソルは最初にGlobal Average Pooling\cite{GAP_paper}にてチャネルごとに空間情報である画素の平均を取り各チャネルごとに単一の平均値を取る. これによって大域的な情報を獲得することを可能とする. こうして圧縮した$(C \times 1 \times 1)$の形状のテンソルを全結合層とReLU\cite{ReLU_paper}関数によって線形変換を行うことで$(C/r \times 1 \times 1)$のサイズのテンソルとなる. こうすることで複雑さを回避した一般化が可能になる. $r$は割引率(Reduction Rate)と呼ばれる一般化の強さを指定するハイパーパラメータであり, 今回の手法においては16に設定した. このようにして出力されたテンソルを再び全結合層で線形変換を行い, シグモイド関数で0から1までの範囲に値を収めることで$(C \times 1 \times 1)$のサイズの重み行列となる. これを入力テンソルとチャネル方向で乗算を行うことで重み付けをされたテンソルを得ることができる.
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=14cm]{./figure/4_proposed_method/SE_with_Residual.drawio.png}
+  \caption{SE Moduleを伴ったBottleneck Block}
+  \label{fig:Bottleneck_Block}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+本論文で使用したネットワークはResNet50\cite{ResNet_paper}をベースに, 入力画像をResNetの$(3 \times 224 \times 224)$から$t$フレーム分の時系列画像の入力に対応するため$((3 \times t) \times 224 \times 224)$と入力チャネル数を拡張した他, ResNet50が持つBottleneck BlockのResidual Connection周りの接続を図\ref{fig:Bottleneck_Block}のようにSE Moduleを連結させたものに発展改良させた. これによってカメラの現在姿勢を推定する上で重要となる時刻の情報を重点的に参考にすることが可能になり, ワンショットでの姿勢推定ネットワークと比較して高度な姿勢推定が可能になる.
+
+
+\section{IMUからのセンサ情報とDNNによる姿勢推定の統合}
+
+EKF\cite{EKF_paper}における状態ベクトル\(\bm{x}\)は，ロボットのロール\(\phi\)とピッチ\(\theta\)とヨー\(\psi\)で構成されている.
+%
+\begin{equation}
+	\bm{x}
+	=
+	\begin{pmatrix}
+		\phi & \theta & \psi
+	\end{pmatrix}
+	^\mathrm{T}
+\end{equation}
+%
+\ref{sec:Camera_DNN_Estimation}節で述べたように, カメラ画像を用いた機械学習による姿勢推定ではロールとピッチのみを推定している事と, ヨーの推定がロボットの走行安定性には寄与しないことから以降の数式では便宜上表記しているが, 実装上では常に$\psi=0$として処理されている.\par
+状態ベクトル\(\bm{x}\)と共分散行列\(\bm{P}\)は，事前分布の更新と事後分布の更新の両方で逐次的に計算される．
+%
+%
+ここで，\(t\)は時間ステップ，\(S_{\phi}\)，\(C_{\phi}\)，\(T_{\phi}\)はそれぞれ\(\sin{\phi}\)，\(\cos{\phi}\)，\(\tan{\phi}\)の略として以下で用いられる．%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{角速度センサを用いた事前分布更新}\label{sec:ekf_gyro}
+本項目ではIMUから得られる角速度情報を用いた姿勢推定における事前分布更新の更新について述べる. なお, IMUから得られる各種の観測情報は\ref{sec:real_world_dataset_collection}節で述べるジンバルの座標系に予め調整したものである.\par
+状態ベクトル\(\bm{x}\)と共分散行列\(\bm{P}\)は，それぞれ以下のように計算される．
+%
+
+\begin{equation}
+	\begin{split}
+		\bar{\bm{x}_{t}}
+		&=
+		f_{(\bm{x}_{t-1}, \bm{u}_{t-1})}
+		=
+		\bm{x}_{t-1} + \bm{Rot}^\mathrm{rpy}_{(\bm{x}_{t-1})} \bm{u}_{t-1}
+\end{split}
+\end{equation}
+
+\begin{equation}
+	\begin{split}
+		\bm{u}_{t-1}
+		&=
+		\bm{\omega}_{t-1} \Delta t
+		=
+		\begin{pmatrix}
+			\omega_{\mathrm{x}_{t-1}} \Delta t \cr
+			\omega_{\mathrm{y}_{t-1}} \Delta t \cr
+			\omega_{\mathrm{z}_{t-1}} \Delta t
+		\end{pmatrix}
+            =
+            \begin{pmatrix}
+			\Delta roll \cr
+			\Delta pitch \cr
+			\Delta yaw
+		\end{pmatrix}
+		, %
+		\bm{Rot}^\mathrm{rpy}_{(\bm{x}_{t-1})}
+		=
+		\begin{pmatrix}
+			1 & S_{\phi_{t-1}} T_{\theta_{t-1}} & C_{\phi_{t-1}} T_{\theta_{t-1}} \cr
+			0 & C_{\phi_{t-1}} & -S_{\phi_{t-1}} \cr
+                0 & \frac{S_{\phi_{t-1}}}{C_{\theta_{t-1}}} & \frac{C_{\phi_{t-1}}}{C_{\theta_{t-1}}}
+		 \end{pmatrix}
+	\end{split}
+\end{equation}
+%
+ここで，\(f\)は状態遷移モデル，\(\bm{u}\)は制御ベクトル，\(\bm{\omega}\)は角速度センサで計測される3軸角速度，\(\bm{Rot}^\mathrm{rpy}\)は角速度の回転行列を表す．
+%
+\begin{equation}
+	\bar{\bm{P}_{t}}
+	=
+	{\bm{J_f}}_{t-1} \bm{P}_{t-1} {\bm{J_f}}_{t-1}^\mathrm{T} + \bm{Q}_{t-1}
+	,\quad%
+	{\bm{J_f}}_{t-1}
+	=
+	\left. \frac{\partial f}{\partial \bm{x}} \right|_{\bm{x}_{t-1}, \bm{u}_{t-1}}
+\end{equation}
+%
+ここで，\(\bm{J_f}\)は\(f\)のヤコビアン，\(\bm{Q}\)はプロセスノイズの共分散行列を表す.
+
+%EKFにおける状態ベクトル\(\bm{x}\)は，ロボットのロール\(\phi\)とピッチ\(\theta\)とヨー\(\psi\)で構成されている．
+
+ヤコビアンである\(\bm{J_f}\)について, 以下のように表記される.
+\begin{equation}
+	\begin{split}
+		\bm{J_f}
+		&=
+		\begin{pmatrix}
+			S_{11} & S_{12} & S_{13} \cr
+			S_{21} & S_{22} & S_{23} \cr
+                S_{31} & S_{32} & S_{33}
+		\end{pmatrix}
+\end{split}
+\end{equation}
+
+各行列の要素については以下のように表記される.
+
+\begin{equation}
+            \bm{S_{11}} =  1 + (C_{\phi_{t-1}} T_{\theta_{t-1}} \Delta pitch + S_{\phi_{t-1}} T_{\theta_{t-1}} \Delta yaw )
+\end{equation}
+
+\begin{equation}
+            \bm{S_{12}} = \frac{S_{\phi_{t-1}} \Delta pitch}{C_{\theta_{t-1}} C_{\theta_{t-1}}} \times \frac{C_{\phi_{t-1}} \Delta yaw}{C_{\theta_{t-1}} C_{\theta_{t-1}}}
+\end{equation}
+
+\begin{equation}
+    \bm{S_{13}} = 0
+\end{equation}
+
+\begin{equation}
+    \bm{S_{21}} = -S_{\phi_{t-1}} \Delta pitch + C_{\phi_{t-1}} \Delta yaw
+\end{equation}
+
+\begin{equation}
+    \bm{S_{22}} = 1
+\end{equation}
+
+\begin{equation}
+    \bm{S_{23}} = 0
+\end{equation}
+
+\begin{equation}
+    \bm{S_{31}} = \frac{C_{\phi_{t-1}}}{C_{\theta_{t-1}}} \Delta pitch - \frac{S_{\phi_{t-1}}}{C_{\theta_{t-1}}} \Delta yaw
+\end{equation}
+
+\begin{equation}
+    \bm{S_{32}} = \frac{ S_{\phi_{t-1}}S_{\theta_{t-1}} }{ C_{\theta_{t-1}}C_{\theta_{t-1}} } \Delta pitch +  \frac{ C_{\phi_{t-1}}S_{\theta_{t-1}} }{ C_{\theta_{t-1}}C_{\theta_{t-1}} } \Delta yaw
+\end{equation}
+
+\begin{equation}
+    \bm{S_{33}} = 1
+\end{equation}
+
+プロセスノイズの共分散行列である\(\bm{Q}\)について, ハイパーパラメータである$\bm{\sigma}_{pri}$を用いて以下のように表記される.
+\begin{equation}
+	\begin{split}
+		\bm{Q}
+		= \bm{\sigma}_{pri}
+		\begin{pmatrix}
+			1 & 0 & 0 \cr
+			0 & 1 & 0 \cr
+                0 & 0 & 1
+		 \end{pmatrix}
+	\end{split}
+\end{equation}\label{eq:sigma_pri}
+%
+
+\subsection{観測した角度情報を用いた事後分布の更新}\label{sec:ekf_dnn}
+本項目では\ref{sec:Camera_DNN_Estimation}節で述べた機械学習による姿勢推定結果を用いて事後分布の更新を行う. なお, ここで述べる事後分布の更新方法はIMUから得られる角度情報を用いて行うこともできる.\par
+機械学習による姿勢推定結果$\hat{\bm{Z_{t}}}$は以下のように表記される. なお, $\psi=0$である.
+
+\begin{equation}
+	\hat{\bm{Z_{t}}}
+	=
+	\begin{pmatrix}
+		\hat{\phi} & \hat{\theta} & \hat{\psi}
+	\end{pmatrix}
+	^\mathrm{T}
+\end{equation}
+
+観測モデルを表す$H$のヤコビアンである\(\bm{J_h}\)は単位行列で表される.
+
+\begin{equation}
+	\begin{split}
+		\bm{J_h}
+		= \begin{pmatrix}
+			1 & 0 & 0 \cr
+			0 & 1 & 0 \cr
+                0 & 0 & 1
+		 \end{pmatrix}
+	\end{split}
+\end{equation}
+事後分布の更新における計算で用いる行列$Y$は事前分布更新で得られた姿勢$\bar{\bm{x}_{t}}$と機械学習による姿勢推定結果$\hat{\bm{Z_{t}}}$を用いて以下のように表記される.
+\begin{equation}
+    \bm{Y} = \hat{\bm{Z_{t}}} - \bar{\bm{x}_{t}}
+\end{equation}
+
+事後分布の更新における計算で用いる行列$R$はハイパーパラメータである$\bm{\sigma}_{pos}$を用いて以下のように表記される.
+\begin{equation}
+	\begin{split}
+		\bm{R}
+		= \bm{\sigma}_{pos}
+		\begin{pmatrix}
+			1 & 0 & 0 \cr
+			0 & 1 & 0 \cr
+                0 & 0 & 1
+		 \end{pmatrix}
+	\end{split}
+\end{equation}\label{eq:sigma_pos}
+
+同じく計算で用いる行列$S$と$K$は以下のように表記される.
+\begin{equation}
+	\begin{split}
+		\bm{S}
+		&=
+		\bm{J_h}\bar{\bm{P}_{t}}\bm{J_h}^{T} + \bm{R}
+		, %
+		\bm{K}
+		=\bar{\bm{P}_{t}}\bm{J_h}^{T}\bm{S}^{-1}
+	\end{split}
+\end{equation}
+これらの行列を持って, 事後分布の更新によって得られる状態ベクトル\(\bm{x}\)と共分散ベクトル\(\bm{P}\)は, $3 \times 3$の単位行列である\(\bm{I}\)を用いて以下のように表記される.
+\begin{equation}
+	\begin{split}
+		\bm{x}
+		&=
+		\bar{\bm{x}_{t}} + \bm{K}\bm{Y}
+		, %
+		\bm{P}
+		=(\bm{I} - \bm{K}\bm{J_h})\bar{\bm{P}_{t}}
+	\end{split}
+\end{equation}

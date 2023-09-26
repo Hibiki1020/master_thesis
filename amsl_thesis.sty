@@ -1,0 +1,57 @@
+\typeout{AMSL X論用スタイルファイル}
+
+\def\baselinestretch{1.1}
+\topmargin=-10mm
+\oddsidemargin=0mm
+\evensidemargin=0mm
+\textheight=240mm	% 40行(11pt)
+\textwidth=160mm	% 43字(11pt)
+\parindent=1zw		% 段落の頭の字下げ
+
+%%  卒業年度
+\def\@gyear{2020}
+\def\gyear#1{\def\@gyear{#1}}
+
+%%
+%% 学生番号
+%%
+\def\@studentid{\verb|\studentid|を指定して下さい}
+\def\studentid#1{\def\@studentid{#1}}
+
+\def\@bachelar{%
+  \def\@faculty{理工学部}%
+  \def\@department{機械工学科}%
+  \def\@thesis{卒 業 論 文}%
+}
+
+\def\@master{%
+  \def\@faculty{大学院理工学研究科}%
+  \def\@department{機械工学専攻}%
+  \def\@thesis{修 士 論 文}%
+}
+
+\def\bachelar{\@bachelar}
+\def\master{\@master}
+
+\bachelar
+
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+    \vspace*{10mm}
+    \begin{center}
+      {\huge\@gyear 年度\hspace{5mm}\@thesis\par}
+      \vfill
+      {\huge\bf\@title\par}
+      \vfill
+      \vspace{10mm}
+      {\Large\@date\par}
+      \vspace{20mm}
+      {\Large\@department\par}
+      {\Large (学生番号: \@studentid )\par}
+      \vspace{5mm}
+      {\LARGE\@author\par}
+      \vspace{55mm}
+      {\Large 明治大学\@faculty}
+      \vspace{10mm}
+    \end{center}
+  \end{titlepage}}{}%

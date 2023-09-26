@@ -1,0 +1,56 @@
+\chapter{序論}
+\section{はじめに}
+今日の日本は少子高齢化を原因とする深刻な労働者の不足に直面している. その中でも警備業界は働き手の不足と高齢化の問題が深刻であり, 近年では図\ref{fig:SQ2_pic}のような人の代わりとなる警備ロボットの導入が業界内で進められている. 今日において稼働している警備ロボットは差動二輪など比較的単純な機構を備えたものが多い. そのために機動力が限定され人が密集した状況下では人を避けて進むような自律移動ができず, 身動きが取れなくなる状況が頻発している. この問題を解決するため新しい機構を備えた警備ロボットの研究開発が進んでいる.
+
+\begin{figure}[thpb]
+  \begin{tabular}{c}
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=4cm]{./figure/2_introduction/sq2_pic.png}
+  \caption{SEQSENSE社製警備ロボットSQ2}
+  \label{fig:SQ2_pic}
+  \end{center}
+  \end{minipage}
+  \end{tabular}
+\end{figure}
+
+\newpage
+
+\section{研究背景}\label{sec:background}
+現在の警備ロボットが抱えている機動力の問題を解決するために, 図\ref{fig:CCV_pic}のような上体を自在に傾けることで高い機動力を発揮することのできるロボットが開発された. このようなロボットにおいて自らの正確な姿勢を取得することは必須である. 姿勢推定のための手法はドローンや航空機の分野を中心に多数の優れた手法が提案されてきた. しかし, これらの手法はIMUなどの内界センサの情報を用いるものであり, 図\ref{fig:CCV_pic}のような地面とタイヤが接地しているようなロボットではこれらの手法を使用しても走行時に地面から発生する振動, ノイズ, スリップが姿勢推定を困難にする\cite{Vaganay1993MobileRA}. このことからドローンなどの分野で行われているような内界センサのみを用いた姿勢推定に代わる別の姿勢推定手法が求められいる. \par
+
+\begin{figure}[thpb]
+  \begin{tabular}{c}
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=7cm]{./figure/2_introduction/CCV.jpg}
+  \caption{上体を自在に傾けることで高い機動力を発揮することを目的としたロボット}
+  \label{fig:CCV_pic}
+  \end{center}
+  \end{minipage}
+  \end{tabular}
+\end{figure}
+
+この問題に対する解決策として, LiDAR(図\ref{fig:VLP-32C})やカメラ(図\ref{fig:D435})といった外界センサからの観測情報を利用して姿勢を推定するものがある. 代表的な手法としてSLAM\cite{thrun2005probabilistic}や自己位置推定が存在する. しかし, SLAMは計算コスト, 誤差蓄積, 動的障害物の対処といった問題があり\cite{SLAM_fail}, 自己位置推定は正確な姿勢推定こそ可能だが正確な事前地図の作成が必須となる. このことから外界センサを用いた姿勢推定には誤差蓄積がないこと, 実用的な計算コストであること, 未知の環境でも周囲の情報の法則性を掴むことで姿勢を推定できることが求められている. \par
+
+\begin{figure}[thpb]
+\begin{minipage}[b]{0.5\linewidth}
+  \begin{center}
+  \includegraphics[width=6cm]{./figure/2_introduction/VLP-32C.png}
+  \caption{Velodyne VLP-32C}
+  \label{fig:VLP-32C}
+  \end{center}
+  \end{minipage}
+\begin{minipage}[b]{0.5\linewidth}
+  \begin{center}
+  \includegraphics[width=6cm]{./figure/2_introduction/D435.jpg}
+  \caption{Intel Realsense D435}
+  \label{fig:D435}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+この問題を解決するために, LiDARを用いた姿勢推定手法として建物といった人工物は鉛直もしくは水平に作られているというマンハッタンワールド仮説\cite{マンハッタンワールド仮説}を前提として, LiDARから取得した点群データから法線ベクトルを抽出してそれをもとに姿勢推定を行う手法を尾崎らは提案した\cite{ozaki_lidar_normal}. この手法によって高い姿勢推定精度を発揮することができたが, この手法はマンハッタンワールド仮説を前提としているため屋外のような建物が少ない環境では姿勢推定精度を出すことができなかった. この問題を解決するために, カメラから取得した画像とそれに対応する姿勢データを学習させたDNNによって姿勢を推定する手法が提案された\cite{Ozaki_SII2021}\cite{gravity_vector_estimation}. この手法はIMUやLiDARからの情報をカルマンフィルタ\cite{EKF_paper}によって統合することで高い推定精度を発揮したものの\cite{Ozaki_springer_Camera_and_IMU_EKF}\cite{Ozaki_IEEE_Camera_and_IMU_EKF}\cite{Ozaki_springer_Camera_and_LiDAR_DNN}, DNN単体の推定精度に注目すると発展改良の余地があった. \par この問題を解決するために手描き文字識別で用いられている手法を参考に, 従来のDNNの出力層に用いられていた数値回帰型のネットワーク\cite{Ozaki_SII2021}に代わりクラス分類型の出力層を導入した\cite{Kawai_SII2022}. この出力層の導入でDNN単体での姿勢推定精度は向上した. この他にも深度画像とRGB画像からの情報を統合して姿勢推定を行う手法\cite{Kawai_SII2023}などが提案されたが, これらの手法は全てロボットのこれまでの状態の遷移を考慮していないワンショットの姿勢推定である. ワンショットで行う姿勢推定は誤差蓄積がないといったメリットが存在するものの, ロボット特有の運動特性を考慮した上での姿勢推定を行うことはできず, これまでDNNによってRoll角が0度で推定されてきたものが, 機械学習特有の不確かさ\cite{Uncertain_in_DL}を起因とする推定結果の乱れによって次の推定ではRoll角が30度として推定されるなどロボットの物理特性的にありえない推定結果が発生することがある. このため, カメラ画像での姿勢推定にはロボットの運動特性を考慮した手法が求められている.
+
+\section{研究目的}
+本研究では, 時系列に採取されたカメラ画像を入力とするDNNを用いることでロボットの運動特性を把握した上での高度な自己姿勢推定を可能とする手法を提案するとともに, 実環境での運用を想定した実験を行うことでその有効性を示す.

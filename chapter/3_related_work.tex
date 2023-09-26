@@ -1,0 +1,81 @@
+\chapter{関連研究}
+\section{ロボットにおける姿勢推定}\label{sec3:attitude_estimation_for_robot}
+姿勢推定手法の歴史は長く, これまで様々な手法が提案されてきた\cite{attitude_estimation_survey1}\cite{attitude_estimation_survey2}. 姿勢推定手法はドローンの分野\cite{drone_attitude_estimation1}\cite{drone_attitude_estimation2}\cite{drone_attitude_estimation3}と宇宙航空の分野\cite{airplane_attitude_estimation1}\cite{airplane_attitude_estimation2}\cite{airplane_attitude_estimation3}で盛んに行われてきた. これらの分野で行われている手法の多くはIMUなどの内界センサから得られる姿勢情報や角速度の情報を積分して現在の姿勢を推定するものである. 地面と設置していないドローンなどではこの手法でも問題ないが, 図\ref{fig:CCV_pic}のようにタイヤが地面と接地しているロボットは地面から伝わる振動が激しく, それを原因として発生するドリフト, ノイズ, バイアスによって姿勢推定が破綻する. \par
+このような問題に対する解決策として提案されたのがLiDARやカメラなど, 外界センサからの観測情報を用いて姿勢を推定することである. 代表的な手法として挙げられるのがSLAM\cite{SLAM_attitude_estimation}\cite{ORB_SLAM}\cite{LIO-SAM}\cite{Cartgrapher}と自己位置推定\cite{Particle_Filter}\cite{NDT_Localization}\cite{EKF_Localization}である. しかし, SLAMは走行距離とともに誤差が蓄積し計算コストも非常に大きなものになる欠点があり, 自己位置推定は高い推定精度が得られるもののロボットが動作する環境の正確な地図を作成する必要がありその地図の範囲外での姿勢推定ができない. このことから, 姿勢推定手法には誤差蓄積がないこと, 極めて限られた環境だけでなく幅広い環境で動作できること, 高速な処理が可能であることの三つが求められている.\par
+この問題に対して尾崎らは建物が持つ法則性に基づいた姿勢推定手法を提案した\cite{ozaki_lidar_normal}. この手法は建物や壁は垂直, 天井は水平に建てられているといったマンハッタンワールド仮説\cite{マンハッタンワールド仮説}に基づき, LiDARから得られるスキャン点群から主成分分析\cite{PCA_Normal}を適用して法線ベクトルを抽出し, 抽出された法線群でガウス球\cite{Gauss_Sphere}を生成して球内の点群に対してユークリッド距離に基づくクラスタ分析を適用する(図\ref{fig:ozaki_lidar_normal})． この手法は正確な姿勢をワンショットで推定することが可能であるが, 正確な姿勢推定ができるのは屋内など人工物が非常に豊富な環境に限定され, 広場などの環境では姿勢推定ができない問題があった. この問題を解決するために提案されたのが, \ref{sec3:camera_dnn_attitude_estimation}節で述べるカメラ画像とそれに対応する姿勢角を学習させたDNNによる姿勢推定手法である.
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=7cm]{./figure/3_related_work/gauss_sphere.jpeg}
+  \caption{ガウス球上でのクラスタリング}
+  \label{fig:ozaki_lidar_normal}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+
+\section{カメラ画像を用いたDNNによる姿勢推定}
+\subsection{機械学習による画像認識}
+画像認識における代表的な手法である畳み込みニューラルネットワーク(Convolutional Neural Network, 以下CNN)\cite{CNN_original_paper}は福島らの提案したネオコグニトロン\cite{neocognitron}を起源とし, 動物の視覚野から着想を得た手法である. CNNは2012年に開催された画像識別のコンペティションであるImageNet Large Scale Visual Recognition Challenge 2012(ILSVRC2012)\cite{ILSVRC-2012}において, ヒルトンらが提案したCNNを備えたAlexNet\cite{AlexNet}が他の手法に大差をつけて優勝したことが爆発的な普及のきっかけである. これまでのこのコンペティションではSVM\cite{SVM_original_paper}などを用いて, 前年度比で2\%程度の識別精度の改善を行なってきたが, AlexNetは前年の識別精度に対して10\%以上の改善を達成した. このコンペティション以降CNNは爆発的な普及を見せた. この背景にあったのはインターネットの普及に伴いデータの収集と研究者同士の情報交換が過去と比較して極めて容易になったこと, ImageNet\cite{ImageNet_paper}やMNIST\cite{MNIST_paper}などの質の良いデータセットがオープンソースとして誰でも無料で利用できるようになったこと, GPUによる高速な行列演算\cite{GPU_computing_paper}の技術の発展とそのためのライブラリ\cite{CUDA_paper}が無料で公開されるといった様々な要素が関わった結果である.\par
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=11cm]{./figure/3_related_work/YOLO.jpeg}
+  \caption{機械学習による物体検出}
+  \label{fig:Object_Detection}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=11cm]{./figure/3_related_work/Segmentation.jpeg}
+  \caption{機械学習によるSemantic Segmentation}
+  \label{fig:Semantic_Segmentation}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+AlexNet以降, VGG\cite{VGG_paper}やGoogleNet\cite{GoogleNet_paper}などの優れた手法が提案され, 2015年に開催されたILSVRC2015\cite{ILSVRC-2015}で優勝したResNet\cite{ResNet_paper}は人の認識能力の限界といわれた誤差率5\%を下回り, ついに人間の識別能力を上回った. ここで紹介した手法は全て画像に写っている物体の種類だけを推定するタスクのために提案されたものであるが, この他にも図\ref{fig:Object_Detection}のように物体の種類と位置を推定する物体検出タスクのためのネットワーク\cite{R-CNN}\cite{Fast-R-CNN}\cite{YOLO}や, 図\ref{fig:Semantic_Segmentation}のように画像のピクセルごとにクラスを推定するSemantic Segmentationのためのネットワーク\cite{SegNet_paper}, 動画認識のためのネットワーク\cite{3D-ResNet_paper}などが提案され画像を用いた機械学習による画像認識も様々なタスクとそれに合わせたネットワークが提案されてきた. \par
+今日では, 自然言語処理でのSelf-Attention機構\cite{Transformer_paper}の成功に影響されて提案されたVision Transformer(ViT)\cite{ViT_paper}やその発展手法\cite{Swin_Transformer_paper}\cite{DeiT_paper}\cite{CvT_paper}\cite{TimeSformer_paper}を中心とする画像識別ネットワークの複雑高度化, DALL·E2\cite{DALLE2_paper}やStable Diffusion\cite{Stable_Diffusion_paper}などの画像生成(図\ref{fig:DALLE})のネットワークに代表される自然言語処理タスクと画像認識タスクの融合など, 機械学習による画像認識は複雑高度化, 実用化, そしてこれまで人工知能に触れることのなかった人々への急速な普及に伴う大衆化が進んでいる.
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[keepaspectratio, scale=0.15]{./figure/3_related_work/DALLE2_1.jpeg}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[keepaspectratio, scale=0.15]{./figure/3_related_work/DALLE2_2.jpeg}
+  \end{minipage}
+  \caption{DALL·E2によって生成された画像}\label{fig:DALLE}
+\end{figure}
+
+
+
+
+\subsection{DNNを利用した姿勢推定}\label{sec3:camera_dnn_attitude_estimation}
+\ref{sec3:attitude_estimation_for_robot}節で述べたように, LiDARからの情報と建物の規則性\cite{マンハッタンワールド仮説}を利用した姿勢推定手法\cite{ozaki_lidar_normal}は屋内など限られた環境でしか良い推定結果が得られなかった. この問題に対する解決策として外界センサとしてカメラを利用し, そこから得られる情報を用いて姿勢を推定する方式である. カメラを用いた姿勢推定手法自体は古くから研究されており, \ref{sec3:attitude_estimation_for_robot}節でも述べたSLAMの他にも地平線を参考に姿勢を推定する手法\cite{地平線による姿勢推定1}\cite{地平線による姿勢推定2}などが提案されたが, これらの手法は特定のランドマークとなる物体に極めて強い依存するため移動ロボットの姿勢推定として有効な手段とは言えない.\par
+このような問題に対して尾崎らはカメラからの画像と, それに対応する姿勢角を学習させたDNNを用いることでカメラから得られる画像から姿勢を推定する手法を提案した\cite{Ozaki_SII2021}. カメラ画像を入力とすることでDNNは学習中に建物や木, 電柱や地面の形状など姿勢推定をする際に参考になる情報を自ら発見しそれらを集中的に注意を払うようにDNN中のパラメータを更新していく. これによって従来の手法で生じていたランドマークとなる物体が特定の種類のものに依存していた問題や周囲に人工物が豊富でないと姿勢推定ができなかった問題を解決するとともに, GPUコンピューティングによる高速演算でリアルタイムでの姿勢推定を可能にした. 尾崎らはDNNとLiDAR, IMUなどの各種センサからの情報を統合することで高い姿勢推定精度を達成した\cite{Ozaki_springer_Camera_and_IMU_EKF}\cite{Ozaki_IEEE_Camera_and_IMU_EKF}\cite{Ozaki_springer_Camera_and_LiDAR_DNN}. しかし, DNN単独での姿勢精度を見ると必ずしも良好で実用に耐えれるとは言えなかった. このことから, より高度な自己姿勢推定のためにDNNの姿勢推定能力を大きく向上させる必要が発生した.
+
+\subsection{クラス分類型出力層}\label{sec3:classification_output_layer}
+姿勢推定DNNが十分な推定精度を出せない原因として, ほとんどの手法における姿勢推定ネットワークの出力層は姿勢角を直接出力する数値回帰型になっておりその貧弱な表現力が原因であると河合らは指摘し, クラス分類型の出力層を導入することで推定精度向上を図った\cite{Kawai_SII2022}. クラス分類型出力層は古文書の日本語のくずし字における文字識別タスクでの手法\cite{kuzushiji_1}\cite{kuzushiji_2}から着想を得たものである. くずし字は同じ文字でも時代や書き手の癖によって字の形状が大きく変化するものの字を推定することのできる共通の特徴は兼ね備えており, クラス分類型の出力層を持つネットワークで推論することで正しく識別ができている. カメラの画像においても, Roll0度, Pitch0度という一定の姿勢角度であっても撮影する場所によって画像に映る風景は大きく変化するが, 映り込んでいる建物や木, 電柱などの物体から姿勢を推定することが可能である. この共通性からクラス分類型の出力層を姿勢推定ネットワークに導入し, 数値回帰型と比較して高い推定精度を発揮できることを示した.\par
+クラス分類型出力層の構造を図\ref{fig:classification_layer}に示す. クラス分類型出力層は出力層の中で扱う角度の範囲を限定しそれぞれのクラスに特定の角度を割り振ることで, 画像を採取したカメラがどのような角度なのかを確率で表現する. 図\ref{fig:classification_layer}を例にとる. 図\ref{fig:classification_layer}の場合では出力層の扱う角度の範囲を-30度から+30度に絞り, それぞれの角度に対応した61次元のベクトルである出力層を定義する. 61次元あるベクトルにはそれぞれ対応する角度が割り振られており, -30度に対応するのは0番のインデックス, -29度に対応するのは1番のインデックスといったように0番から61番まで角度を割り振っていく. 機械学習における画像分類タスク\cite{ResNet_paper}では学習の際に正解ラベルの値は1か0にするのが通常であるが, この場合-29.4度のような連続値に対応できない. このような問題に対処するため, ソフトラベル\cite{Soft_Label_paper}のアイデアに基づいて正解ラベルに0.0から1.0までの連続値を付与する. これによって-30度に当たるインデックス0番には0.4, -29度に当たるインデックス1番には0.6をそれぞれ割り振ることで-29.4度という角度を表現できる. 推論の際には全てのインデックスとそこの確率を図\ref{fig:classification_layer}のように計算していくことで推定値を算出する. また, クラス分類型出力層の性質上表現できる角度の範囲に制約が存在し, 扱える範囲外の角度を扱わないといけなくなった場合は30度以上であることを表現するクラスを用意して対処する\cite{Kawai_SI2022}.\par
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=10cm]{./figure/3_related_work/classification_layer.jpg}
+  \caption{クラス分類型出力層での姿勢角度の表現}
+  \label{fig:classification_layer}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+クラス分類型出力層は数値回帰型と比較してパラメータ数が多いことに起因する表現力\cite{Expressive_power_paper}の豊富さ, 共役事前分布(Conjugate Prior Distribution)\cite{Conjugate_Priors_paper}が交差エントロピー誤差\cite{Cross_Entropy_paper}を用いた学習において示されるため学習時の収束が平均二乗誤差\cite{MSE_Loss_paper}と比較して早くなるといった特性が存在する. これらの特性を備えたクラス分類型出力層を備えたネットワークによる姿勢推定は数値回帰型ネットワークと比較して高い推定精度を発揮した.
+
+\subsection{クラス分類型出力層を持つネットワークによる姿勢推定}
+クラス分類型出力層\cite{Kawai_SII2022}が提案された後, この機構を備えた姿勢推定ネットワークが河合らより提案された. 学習データにない環境に対応するために深度画像とカメラ画像を入力としたネットワーク\cite{Kawai_SII2023}やTransformerを備えたネットワーク\cite{Kawai_SI2022}などが提案されたが, これらの手法は全て学習から精度の検証までシミュレータ環境において行われたものであり, 実環境で発生する光学的なノイズは一切考慮されてこなかった. したがって, 姿勢推定ネットワークには実環境で十分な精度で姿勢推定を行える能力が求められている.

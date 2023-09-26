@@ -1,0 +1,92 @@
+\documentclass[12pt, dvipdfmx]{jreport}
+\usepackage{amsl_thesis}
+\usepackage{tabularx}
+\usepackage{comment}
+\usepackage[dvipdfmx]{hyperref}
+\usepackage{pxjahyper}
+\usepackage{url}
+%\usepackage{algorithm}
+\usepackage{algorithm2e}
+\usepackage{subcaption}
+\makeatletter
+\renewcommand{\@algocf@capt@plain}{above}% formerly {bottom}
+\makeatother
+\usepackage{algorithmic}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{bm}
+\usepackage{amsmath,amssymb}
+\usepackage[T1, T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{pdfpages}
+
+\hypersetup{
+	colorlinks=false,
+	%bookmarks=true,
+	bookmarksnumbered=true,
+	pdfborder={0 0 0},
+	bookmarkstype=toc
+}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{DNNとカメラ画像を利用する\\誤差蓄積のない姿勢推定手法に関する研究}
+\author{河合　響}
+%\bachelar  % 卒業論文(B4用)
+\master % 修士論文(M2用)
+
+\studentid{452R212026} % 学生番号
+\gyear{2022} % 卒業年度
+\date{2023年2月8日} % 論文提出日
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\includepdf[pages=-]{./papers/master_top.pdf}
+
+\maketitle
+
+\pagenumbering{roman}
+%% 概要
+\input{chapter/1_abstract}
+
+%% 目次
+\tableofcontents
+\listoffigures
+\listoftables
+
+\newpage
+\pagenumbering{arabic}
+
+%% 本文
+\input{chapter/2_introduction}
+
+\input{chapter/3_related_work}
+
+\input{chapter/4_proposed_method}
+
+\input{chapter/5_environment}
+
+\input{chapter/6_result}
+
+\input{chapter/7_conclusion}
+
+%% 謝辞
+\input{chapter/acknowledgment}
+
+%% 参考文献
+\renewcommand{\bibname}{参考文献}
+\bibliographystyle{junsrt}
+\bibliography{references}
+
+%% 付録
+\input{chapter/appendix}
+
+\includepdf[pages=-]{./papers/robo_mech2021.pdf}
+\includepdf[pages=-]{./papers/SII_2022.pdf}
+\includepdf[pages=-]{./papers/robo_mech2022.pdf}
+\includepdf[pages=-]{./papers/SI_2022.pdf}
+\includepdf[pages=-]{./papers/SII_2023.pdf}
+
+\end{document}

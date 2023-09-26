@@ -1,0 +1,232 @@
+\chapter{実験結果}
+
+\section{DNNの学習}
+本項目では実験に用いたTimeSformerベースのネットワーク(\ref{sec:TimeSformer})とSENetベースのネットワーク(\ref{sec:SENet})の学習について述べる.
+
+\subsection{学習条件}\label{sec:Train_Env}
+実験に使用したネットワークは\ref{sec:correction_AirSim}節で述べたシミュレータ画像による事前学習と, \ref{sec:real_world_dataset_collection}節で述べた実環境で収集された画像を用いたファインチューニング\cite{Fine_Tuning_Survey}の二段階で学習を行った. また, 学習の際には学習に用いる画像に対してDomain Randomization\cite{Domain_Randomization_paper}を行った. Domain Randomizationとは学習に用いる画像に図\ref{fig:color_change}のようにRGB値を変化させたり, 図\ref{fig:elastic_transform}のように若干の形状変化を加えたり, シミュレータ環境における物理パラメータをランダムに変動させる処理のことを指し, 機械学習に於ける汎化性能の向上に大きな効果を発揮している\cite{Domain_Randomization_1}\cite{Domain_Randomization_2}\cite{Domain_Randomization_3}. また, この他にも画像に対してランダムな場所に対してマスキングを行うRandom Erasing\cite{Random_Erasing_Paper}(図\ref{fig:random_erasing})を行うことでネットワークの汎化性能の向上を行った.\par
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=12cm]{./figure/6_result/color_change.png}
+  \caption{訓練用画像の色相変化}
+  \label{fig:color_change}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=12cm]{./figure/6_result/ElasticTransform.png}
+  \caption{訓練用画像の形状変化}
+  \label{fig:elastic_transform}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+\begin{figure}[thpb]
+  \begin{minipage}[htpb]{1.0\hsize}
+  \begin{center}
+  \includegraphics[width=12cm]{./figure/6_result/Random_Erasing.png}
+  \caption{Random Erasing}
+  \label{fig:random_erasing}
+  \end{center}
+  \end{minipage}
+\end{figure}
+
+学習に用いたハイパーパラメータを表\ref{tab:Training_Hyperparameter}に示す. $\bm{lr_{feature}}$はTransformer BlockやCNN層に関わる学習率, $\bm{lr_{fc}}$は全結合層に関わる学習率を指す. 事前学習とファインチューニングの際に学習率の値が$\bm{lr_{feature}}$と$\bm{lr_{fc}}$で一致しないのは, $\bm{lr_{feature}}$の学習率を低く抑えることで事前学習での学習結果をなるべく保全するためであり, ファインチューニング後のモデルの性能向上に大きな効果を発揮している\cite{Fine_Tuning_tips_paper}. また, $\bm{alpha}$はL2正則化\cite{L2_paper}におけるペナルティ項の強さであり, 学習を収束させるにあたって重要な役割を果たしている.
+
+\begin{table}[htbp]
+\begin{center}
+\caption{学習に用いたハイパーパラメータ}
+  \begin{tabular}{l | r r | l}\hline
+      パラメータ名 &  事前学習 & ファインチューニング & 補足\\ \hline
+    $\bm{lr_{feature}}$ & 1e-6 & 3e-5 & \\
+    $\bm{lr_{fc}}$ & 1e-6 & 1e-4 & \\
+    $\bm{alpha}$ & 5e-4 & 7e-4 & \\
+    バッチサイズ & 640, 160 & 640, 160 & 左$\colon$SENet, 右$\colon$TimeSformer\\
+    エポック数 & 10 & 200, 80 & 左$\colon$SENet, 右$\colon$TimeSformer\\ \hline
+  \end{tabular}
+  \label{tab:Training_Hyperparameter}
+\end{center}
+\end{table}
+
+
+\subsection{学習結果}
+\ref{sec:Train_Env}節で述べた条件のもとでTimeSformerベースのネットワークとSENetベースのネットワークでそれぞれ学習を行った. 学習時間は1フレーム入力のネットワークが約12時間, 4フレーム入力のものが約24時間, 8フレーム入力のものが約55時間であった. 学習の結果を図\ref{fig:TimeSformer_1frame}から図\ref{fig:SENet_8frame}に示す.
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/1frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/1frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{TimeSformer(1フレーム)における学習曲線}\label{fig:TimeSformer_1frame}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/4frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/4frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{TimeSformer(4フレーム)における学習曲線}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/8frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/TimeSformer/8frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{TimeSformer(8フレーム)における学習曲線}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/1frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/1frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{SENet(1フレーム)における学習曲線}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/4frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/4frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{SENet(4フレーム)における学習曲線}
+\end{figure}
+
+\begin{figure}[htbp]
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/8frame/train_log_pretrain.jpg}
+    \subcaption{事前学習}
+  \end{minipage}
+  \begin{minipage}[b]{0.5\linewidth}
+    \centering
+    \includegraphics[width=7.5cm]{./result_fig/SENet/8frame/train_log_finetune.jpg}
+    \subcaption{ファインチューニング}
+  \end{minipage}
+  \caption{SENet(8フレーム)における学習曲線}\label{fig:SENet_8frame}
+\end{figure}
+
+\newpage
+\section{精度検証}\label{sec:verify}
+本項目では姿勢推定ネットワークを用いて推定精度の検証を行う. また, 評価基準として用いられるMAEとは各ステップにおいて姿勢の推定値と真値の差を計算し, 最後に平均した値のことを指す.
+
+\subsection{ネットワーク単独での姿勢推定精度評価}\label{sec:Verify_MAE_Network}
+
+\begin{table}[htbp]
+\begin{center}
+\caption{ネットワーク単独での姿勢推定精度(MAE: Roll, Pitch)}
+  \begin{tabular}{l || c | c | c | c}\hline
+      ネットワーク &  Seq1 [deg]& Seq2 [deg] & Seq3 [deg] & Seq4 [deg]\\ \hline
+    SENet(1frame) & $\bm{2.533}$, $\bm{1.034}$ & $\bm{2.077}$, $\bm{1.380}$ & $\bm{2.636}$, $\bm{1.544}$ & $\bm{2.461}$, $\bm{6.928}$\\
+    SENet(4frame) & 5.063, 1.981 & 5.212, 2.723 & 6.483, 3.535 & 6.054, 12.275 \\
+    SENet(8frame) & 5.124, 2.647 & 5.205, 2.758 & 5.504, 3.569 & 5.257, 10.151 \\ \hline
+    TimeSformer(1frame) & 2.984, 2.337 & 2.629, 2.394 & 3.042, 3.906 & 2.658, 9.300 \\
+    TimeSformer(4frame) & 3.444, 4.187 & 3.424, 3.647 & 3.453, 6.031 & 3.371, 12.624 \\
+    TimeSformer(8frame) & 4.333, 4.120 & 4.053, 4.023 & 4.523, 7.085 & 5.819, 14.223 \\ \hline
+  \end{tabular}
+  \label{tab:MAE_frame_infer_1}
+\end{center}
+\end{table}
+
+
+TimeSformerとSENet, それぞれ入力フレーム数を1, 4, 8にした時のネットワーク単体での姿勢推定結果を表\ref{tab:MAE_frame_infer_1}に示す. また, 本項目での推定精度の検証は25hzの周期でサンプリングされた画像データを用いて行った. \par
+精度検証の結果, 全てのSequenceにおいて時系列画像を用いたネットワークでなく1フレーム入力のSENetが最も良い推定精度が得られた. この原因として考えられるのが学習用データの絶対数が不足していることである. 本来動画解析用のネットワークには合計して数百時間ある動画のデータセットなどを学習用データとして用いる\cite{Video_Recognition_Paper}. しかし, 今回実環境での学習に用いたデータセットは\ref{sec:real_world_dataset_collection}節で述べたように非常に短い合計時間であり, その限られたデータセットでの学習を行っているうちにネットワークが過学習(Overfitting)\cite{Overfitting_paper}を起こし, 高い帰納的バイアス(Inductive Bias)\cite{Inductive_Bias_paper}を得てしまったことを原因としていると考えられる. したがって, 学習データの絶対量の改善もしくは事前学習手法のさらなる改良を行うことで動画解析用のネットワークを用いた姿勢推定はより改善していくと考えられる.\par
+複数枚のフレーム画像を入力としたネットワークが十分な推定精度を得られなかったその一方で, 1フレーム入力のネットワークの推定精度の高さは注目するべきものがあり, この水準の推定精度はこれまでの研究ではIMUやLiDARなどのセンサ情報を統合することでしか得ることができていなかった. ネットワーク単体でのこの推定精度の高さは実用水準の域にあると言っても差し支えがなく, これほどまでの推定精度の原因として考えられるのが\ref{sec:Train_Env}節で述べた事前学習とファインチューニング時における学習方法の改善が挙げられる.\par
+各Sequenceにおける姿勢推定の結果について注目すると, 学習データと同一環境で採取されたSequence1と2では高い姿勢推定精度が得られており, 学習データには存在しない農学部のエリアで採取されたSequence3も1と2ほどまではいかないものの, 高い姿勢推定精度が得られた. これは, ネットワークが姿勢推定を行う際に参考とする情報が建物や窓枠, 電柱など水平面に対して水平もしくは垂直となっている物体を強く参考にするという特性\cite{Kawai_SII2023}に由来する. その一方でSequence4は学習データには存在しない屋内環境で採取されたデータであり, 姿勢推定において参考となりうる壁と床の境界線などの情報はたくさんあるものの, 学習データに存在しない環境であるためにネットワークはどの部分に注目したらいいのかを把握することができず, 結果として推定精度が大きく悪化したと考えられる. \par
+本実験における詳細な実験結果は\ref{sec:Verify_MAE_Network_Append}節を参照されたい.
+
+
+\subsection{フレーム間の時間の変動に対する姿勢推定精度の変動の評価}\label{sec:Verify_hz_Network}
+
+\begin{table}[htbp]
+\begin{center}
+\caption{Sequence1における, フレーム間の時間の変動に対する姿勢推定精度の変動(MAE: Roll, Pitch)}
+  \begin{tabular}{l || c | c | c | c}\hline
+      ネットワーク &  25hz [deg]& 40hz [deg] & 70hz [deg] & 100hz [deg]\\ \hline
+    SENet(4frame) & 5.063, 1.981 & 5.036, 2.040 & 5.012, 2.023 & 5.126, 2.148 \\
+    SENet(8frame) & 5.124, 2.647 & 5.171, 2.730 & 5.097, 2.656 & 5.297, 2.819 \\ \hline
+    TimeSformer(4frame) & 3.444, 4.187 & 3.641, 4.406 & 3.688, 4.489 & 3.874, 4.660 \\
+    TimeSformer(8frame) & 4.333, 4.120 & 4.434, 4.173 & 4.500, 4.273 & 4.672, 4.595 \\ \hline
+  \end{tabular}
+  \label{tab:MAE_frame_infer_2}
+\end{center}
+\end{table}
+
+
+実環境においてリアルタイムでネットワークを用いた姿勢推定を行う際, 推論に使用するGPUを始めハードウェアの性能の問題から必ずしも学習データと同じ周期でサンプリングされた画像を入力にできるわけではない. したがって本項目では時系列画像を入力とするネットワークに対して, 学習データと同じ25hzと100hz, 学習データには存在しない40hzと70hzでサンプリングされた画像を入力とすることで姿勢推定精度にどのような変化が現れるのかをSequence1のデータを用いて検証する. 検証の結果を表\ref{tab:MAE_frame_infer_2}に示す.\par
+実験の結果サンプリング周期を変えることによって若干の推定精度の変化が見られたものの, 推定精度が大きく悪化するといった結果は見られなかった. このような結果となった原因として考えられる要素は2つ考えられ, 1つ目はネットワークが持つ時間方向の特徴抽出の能力によってネットワーク自体が積分器の役割を果たしたために周期変動に対してロバストになった説であり, もう一つは時系列画像の特徴量抽出を学習時に学ぶ際に最終時刻に採取された画像以外の情報が姿勢推定の際に一切考慮されていない説である.\par
+1つ目の要素について, DNNは適切なデータを学習させることで積分器の役割を果たすことが知られている\cite{SI2022_IMU}. 時系列画像を学習させることで姿勢推定ネットワークが積分器としての役割を獲得し, それによって時系列画像の取得周期が変動しても推定精度に大きな変化が起きなかった事が考えられる. 2つ目の要素について, これはSENetにおいて特に強く疑われる現象である. SENetは特定の入力チャネルに対して重みを付与することができる. その一方で時系列画像を用いた姿勢推定はそのタスクの特性上現在時刻と近い時間に採取された画像ほどその情報の重要性は高くなる. この特性をネットワークが把握し, 古い時刻に採取された画像ほど低い重みを与えるようにネットワークのパラメータが更新されていったために周期が変動しても推定精度に大きな変化が現れなかったと考えられる. 実験の結果から時系列画像を入力とする姿勢推定ネットワークは入力画像の周波数変動に対して非常に頑強であることが判明した. この特性は実環境における運用を想定した際に非常に強力なメリットとなり, \ref{sec:Verify_MAE_Network}節で述べたネットワークの学習の改善方法を用いることでより実用的なネットワークができると考える. \par
+本実験における詳細な実験結果は\ref{sec:Verify_MAE_Network_change_hz_Append}節を参照されたい.
+
+
+\subsection{IMUからの観測情報を用いたEKFによる統合}\label{sec:Verify_EKF}
+
+\begin{table}[htbp]
+\begin{center}
+\caption{EKFに用いたハイパーパラメータ}
+  \begin{tabular}{l | c}\hline
+      パラメータ名 &  事前学習 \\ \hline
+    $\bm{\sigma_{Angule}}$ & 0.01 \\
+    $\bm{\sigma_{Velocity}}$ & 0.01 \\
+    $\bm{\sigma_{DNN}}$ & 0.01 \\
+    $\bm{std_{Angle}}$ & 0.1 \\
+    $\bm{std_{Velocity}}$ & 0.03 \\ \hline
+  \end{tabular}
+  \label{tab:EKF_Hyperparameter}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\begin{center}
+\caption{各Sequenceにおける, IMUからの観測情報を用いたEKFによる姿勢推定結果(MAE: Roll, Pitch)}
+  \begin{tabular}{l || c | c | c | c}\hline
+      ネットワーク &  Seq1 [deg] & Seq2 [deg] & Seq3 [deg] & Seq4 [deg]\\ \hline
+    DNN                & 2.917, $\bm{1.100}$ & $\bm{2.342}$, 1.346 & 3.140, $\bm{1.811}$ & 3.163, 7.486 \\
+    DNN+Velocity       & 2.926, 1.108 & 2.344, $\bm{1.344}$ & 3.136, $\bm{1.811}$ & 3.217, 7.448 \\
+    DNN+Velocity+Angle & $\bm{2.695}$, 2.554 & 2.670, 2.589 & $\bm{2.744}$, 2.631 & $\bm{2.740}$, 3.310\\
+    Velocity+Angle     & 3.100, 3.071 & 3.082, 3.097 & 3.087, 3.096 & 3.010, $\bm{3.182}$\\ \hline
+  \end{tabular}
+  \label{tab:MAE_frame_infer_3}
+\end{center}
+\end{table}
+
+提案手法を実環境で運用することを想定した場合, IMUからの観測情報など他のセンサからの情報を統合して姿勢推定を行うことが望ましい. 本項目ではIMUからの観測情報(角度, 角速度)と姿勢推定DNNからの出力をEKFを用いて統合した姿勢推定を行った際の結果について述べる. また, 実験の際に使用したEKFのハイパーパラメータを表\ref{tab:EKF_Hyperparameter}に示す. $\bm{\sigma_{Angule}}$はIMUから得られる姿勢角, $\bm{\sigma_{Velocity}}$はIMUから得られる角速度, $\bm{\sigma_{DNN}}$はDNNからの出力にかかわるパラメータである. $\bm{\sigma_{Velocity}}$は\ref{sec:ekf_gyro}節中の式\ref{eq:sigma_pri}に出てきた$\bm{\sigma_{pri}}$, $\bm{\sigma_{Angule}}$と$\bm{\sigma_{DNN}}$は\ref{sec:ekf_dnn}節中の式\ref{eq:sigma_pos}の$\bm{\sigma_{pos}}$に相当する. $\bm{std_{Angle}}$と$\bm{std_{Velocity}}$はIMUから取得した角度と角速度の値にノイズを加える際に使用した標準偏差の値である. \ref{sec:background}節で述べたように, 図\ref{fig:CCV_pic}のようなロボットを実環境で運用する際には強いノイズが地面から発生する. しかし, 今回実環境でのデータ採取に使った機器(図\ref{fig:Gimbal_image})は手で持つため角度情報にノイズが乗りにくい. したがって実験の際にはIMUからの観測データに対して観測値を平均, $\bm{std_{Angle}}$, もしくは$\bm{std_{Velocity}}$を標準偏差とする正規分布から実験に用いる値をサンプリングして実験を行った.\par
+各Sequenceにおける, IMUからの観測情報を用いたEKFによる姿勢推定結果を表\ref{tab:MAE_frame_infer_3}に示す. 表のDNNは姿勢推定ネットワークからの出力, VelocityはIMUから得られる角速度, AngleはIMUから得られる姿勢角情報を示す. \ref{sec:Verify_MAE_Network}節より, 今回実験に使用したDNNは屋外環境におけるPitch推定を得意としていることが判明している. この特性によってSeq1からSeq3にかけてはAngleを用いない姿勢推定手法が良いPitchの推定精度が得られたとともに, Rollの推定においてもAngleの誤差蓄積をDNNの姿勢推定が緩和していると強く考えられる実験結果が示された. また, 実験に使用したネットワークは学習データにない屋内環境でのPitch推定を非常に苦手としていたが, この場合はAngleを用いた姿勢推定手法が良い推定精度を達成した. このことから, IMUとDNNは姿勢推定において互いに苦手とする部分を相互補完しながら姿勢推定を行っていることが強く考えられる結果となった. \par
+本実験における詳細な実験結果は\ref{sec:EKF_fig_appendix}節を参照されたい.
+
+%各Sequenceにおける, IMUからの観測情報を用いたEKFによる姿勢推定結果を表\ref{tab:MAE_frame_infer_3}に示す. 表のDNNは姿勢推定ネットワークからの出力, VelocityはIMUから得られる角速度, GyroはIMUから得られる姿勢角情報を示す. 実験に使用したDNNは\ref{sec:Verify_MAE_Network}節においてDNN単独で最も姿勢推定精度の良好であったSENet(1フレーム)を用いた. 実験の結果, どのSequenceにおいてもDNNとDNN+Velocityの間に大きな推定精度の差がなく, DNN+Velocity+Gyroが最も良い推定精度が得られた. これは実環境におけるデータ採取において使用したジンバルが図\ref{fig:CCV_pic}のロボットほど大きな振動によるノイズがかからなかったためと考えられる. その結果IMUから得られる姿勢角の情報の信頼性が高くなり, 全Sequenceを通して高い姿勢推定精度が得られたためと考えられる.\par
